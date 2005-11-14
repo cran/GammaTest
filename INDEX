@@ -1,0 +1,20 @@
+HenonMap                The Henon Map: A Zero Noise Chaotic Time
+                        Series
+dvec                    Creating delay vectors from time series
+fesearch                The Full Embedding Search
+gammahist               The Gamma Histogram
+gammatest               Calculating the Gamma Statistic
+gteam                   GTEAM: Gamma Test Embedding Analysis Method
+iesearch                Calculating the Embedding Dimension: The
+                        Increasing Embedding Search
+inspectgammahist        Model Identification: Inspecting The Peaks of
+                        a Gamma Histogram
+loosearch               Calculating the Embedding Dimension: The Leave
+                        One Out Search
+mask2input              Create an Input/Output file for time series.
+mdvec                   Converting Multiple Time Series into
+                        Input/Output Datasets
+mtest                   The M-test: Judging the Reliability of the
+                        Gamma Statistic
+mtest.plot              Plotting the results of the M-test
+summary.gammatest       The Gamma Test: Summary of Results
