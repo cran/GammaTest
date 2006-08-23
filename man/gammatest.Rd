@@ -73,7 +73,7 @@ For papers and Gamma test related material visit
 
 \author{Samuel E. Kemp. To report any bugs or suggestions please email: \email{sekemp@glam.ac.uk}}
 
-\seealso{\code{\link{fesearch}} \code{\link{mtest}} \code{\link{iesearch}} \code{\link{dvec}}}
+\seealso{\code{\link{fesearch}} \code{\link{Mtest}} \code{\link{iesearch}} \code{\link{dvec}}}
 \examples{
 # A noisy sine wave example
 x <- seq(length=500, from=-2*pi, to=2*pi)

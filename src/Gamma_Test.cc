@@ -18,6 +18,7 @@ extern "C"
 	ANNidxArray		nn_idx;		// Near neighbor indices
 	ANNdistArray	dists;		// Near neighbor distances
 	ANNkd_tree		*the_tree;	// Search structure
+	int             bkt_size = 5;
 
 	d			= *dim;
 	M			= *m_pts;
@@ -68,10 +69,7 @@ extern "C"
 
 	//-------------------- Build kd-tree -----------------------------
 
-	the_tree = new ANNkd_tree(	
-		    data_pts,	// The data points
-		    M,		// Number of points
-		    *sumMask);	// Dimension of space
+	the_tree = new ANNbd_tree(data_pts, M, *sumMask, bkt_size);
 
 	for (int j = 0; j < numNN; j++) 	// Initialize the neccessary arrays
 	{
@@ -83,7 +81,7 @@ extern "C"
 
 	for(int i = 0; i < M; i++)	// read query points
 	{
-	    the_tree->annkSearch(	// search
+	    the_tree->annkPriSearch(	// search
 		data_pts[i],			// query point
 		numNN,					// number of near neighbors
 		nn_idx,					// nearest neighbors (returned)

@@ -3,8 +3,7 @@
 #===========================================================
 
 #===========================================================
-gammatest <- function(data, mask=seq(from=1, to=1, length=(length(data[1,])-1)),
-		      p=10, eps=0.00, plot=TRUE, summary=TRUE, ...)
+gammatest <- function(data, mask=seq(from=1, to=1, length=(length(data[1,])-1)), p=10, eps=0.00, plot=TRUE, summary=TRUE, ...)
 #===========================================================
 {
     # Coerce to a data.frame
@@ -55,23 +54,38 @@ gammatest <- function(data, mask=seq(from=1, to=1, length=(length(data[1,])-1)),
     gs 	<- z$coefficients[[1]]
     grad <- z$coefficients[[2]]
     z.sum <- summary(z)
-    se  <- z.sum$coef[1,2]
-    rsq <- z.sum$r.squared
-		
+    vr <- gs/var(data[,dimension])
+    mse <- var(z$residuals)
+    
     if(plot == TRUE)
     {
-	plot(dg$delta, dg$gamma, xlab=expression(delta[M](k)), 
-	ylab=expression(gamma[M](k)), ...)
-	abline(z, lwd=2)
+		plot(dg$delta, dg$gamma, xlab=expression(delta[M](k)), ylab=expression(gamma[M](k)), ...)
+		abline(z, lwd=2)
     }
+    
+    gtlist <- list(mask=mask, deltas.gammas=dg, Gamma=gs, Gradient=grad, Vratio=vr, MSE=mse)
 	
     if(summary == TRUE)
-	gtsummary(list(mask=mask, deltas.gammas=dg, Gamma=gs, Gradient=grad, 
-                   Vratio=gs/var(data[,dimension]),std.err=se, rsq=rsq))
+		gtsummary(gtlist)
 	
-    return(list(mask=mask, deltas.gammas=dg, Gamma=gs, Gradient=grad, 
-                Vratio=gs/var(data[,dimension]),std.err=se, rsq=rsq))
+    return(gtlist)
 }
+
+"popt" <- function(data, pmax)
+{
+	criterion <- NULL
+	gammas    <- NULL
+	for(i in 3 : pmax)
+	{
+		temp <- gammatest(data, p=i, summary=FALSE, plot=FALSE)
+		criterion[i-2] <- temp$MSE
+		gammas[i-2]    <- temp$Gamma
+	}
+	
+	return(gammaMSE<-data.frame(Gammas=gammas, MSE=criterion))
+}
+
+
 #===========================================================
 gtsummary <- function(gt.list)
 #===========================================================
@@ -80,16 +94,15 @@ gtsummary <- function(gt.list)
     cat("     Gamma Test: Summary of Results\n")
     cat("==========================================\n")
     cat("\n")
-    cat("Mask:             ", gt.list$mask, "\n")
-    cat("Gamma Statistic:  ", gt.list$Gamma, "\n")
-    cat("Gradient:         ", gt.list$Gradient, "\n")
-    cat("Standard Error:   ", gt.list$std.err, "\n")
-    cat("R^2:              ", gt.list$rsq, "\n")
-    cat("V Ratio:          ", gt.list$Vratio, "\n")
+    cat("Mask:                  ", gt.list$mask, "\n")
+    cat("Gamma Statistic:       ", gt.list$Gamma, "\n")
+    cat("Gradient:              ", gt.list$Gradient, "\n")
+    cat("V Ratio:               ", gt.list$Vratio, "\n")
+    cat("MS Error of Reg. fit:  ", gt.list$MSE, "\n")
     cat("\n")
 }
 #===========================================================
-fesearch <- function(data, plot=TRUE, ...)
+fesearch <- function(data, plot=TRUE, annerror=0.0, ...)
 #===========================================================
 {
 	#===========================================================
@@ -121,7 +134,7 @@ fesearch <- function(data, plot=TRUE, ...)
     for(i in 1 : max.num)
     {
 	m <- create.binary(i, maxlag)
-	gtarray[i] <- gammatest(data, mask=m, plot=FALSE, summary=FALSE, ...)$Gamma       }
+	gtarray[i] <- gammatest(data, mask=m, plot=FALSE, summary=FALSE, eps=annerror,...)$Gamma       }
     
     y <- sort(abs(gtarray), index.return=TRUE)
     r <- y$ix
@@ -151,8 +164,10 @@ fesearch <- function(data, plot=TRUE, ...)
 	cat("Number of Gamma tests:     ", length(bins[,1]))
 	cat("\n")
     
-    return(list(Gammas=y, mask.array=bins, input.names=n))
+    return(list(Gammas=y, mask.array=bins, input.names=n, time=finish.time - start.time))
 }
+
+
 #===========================================================
 gammahist <- function(fe.results, ...)
 #===========================================================
@@ -161,75 +176,11 @@ gammahist <- function(fe.results, ...)
 	xlab=paste(expression(Gamma), "Bins"), 
 	cex.lab=1.15, cex.axis=1.25, breaks=50, ...)
 }
-#===========================================================
-gteam <- function(fe.results, percentage=12.5, cl="p", alpha=1.96, multiple=FALSE, ...)
-#===========================================================
-{
-	mask.array	    <- fe.results$mask.array
-   	num.of.inputs   <- length(mask.array[1,])
-   	num.of.masks    <- length(mask.array[,1])
-   	sample          <- as.integer((num.of.masks/100)*percentage)
-	counter         = double(num.of.inputs)
-    HGRptr          <- num.of.masks
-    
-    for(i in 1 : sample)
-    {
-       	for(j in 1 : num.of.inputs)
-       	{
-           	if(mask.array[i, j] == 1 && mask.array[HGRptr, j] == 0)
-               	counter[j] <- counter[j]+1
-       	}
-       	HGRptr <- HGRptr-1
-    }
-    
-   	results          <- counter/sample
-    results.new <- results
 
-    # Calculate the parametric confidence limits.
-    E.mu = .25
-    E.sd = .43
-    theta = E.sd/sqrt(num.of.inputs)
-    upper.limit = E.mu + alpha*theta
-        
-   	if(cl == "p")
-   	{
-	    if(multiple == FALSE)
-        {
-    	    plot(results.new, ylim=c(0,1), xlab="Lag", ylab="Frequency",
-            type="h", cex.axis=1.15, cex.lab=1.25, lwd=2)
-        }
-        else
-        {
-        	barplot(results.new, col="red", ylim=c(0,1), 
-        	        xlab="Inputs", ylab="Frequency", axis.lty=1, space=1.25, 
-                    cex.lab=1.25, names.arg=fe.results$input.names, ...)
-        }
-       	abline(upper.limit, 0, lty="dashed", col="navy", lwd=2)
-    }
-    if(cl == "np")
-    {
-       	barplot(results.new, col="red", ylim=c(0,1), 
-       	        xlab="Inputs", ylab="Frequency", axis.lty=1, 
-       	        space=1.25, cex.lab=1.25, names.arg=fe.results$input.names, ...)
-        	
-       	# Calculate confidence limits based on Box-plots statistics
-       	med <- median(results.new)
-       	box.stats   <- boxplot(results.new, plot=FALSE)$stats
-        inner.fence <- box.stats[4]
-        outer.fence <- box.stats[5]
-            
-        abline(med, 0, lty="dashed", lwd=2)							# Draw median line
-        abline(inner.fence, 0, lty="dashed", col="blue", lwd=2)		# Draw inner fence
-        abline(outer.fence, 0, lty="dashed", col="navy", lwd=2)		# Draw outer fence
-    }
-       
-    return(data.frame(efsp=results.new))
-}
 #===========================================================
-durrantsmethod <- function(fe.results, percentage=10)
+durrantsmethod <- function(mask.array, percentage=10)
 #===========================================================
 {
-		mask.array			<- fe.results$mask.array
     	num.of.inputs       <- length(mask.array[1,])
     	num.of.masks        <- length(mask.array[,1])
     	sample              <- as.integer((num.of.masks/100)*percentage)
@@ -256,6 +207,8 @@ durrantsmethod <- function(fe.results, percentage=10)
     	
     	return(data.frame(lgr=LGRresults, hgr=HGRresults))
 }    
+
+
 #===========================================================  
 mask2input <- function(mask, timeseries, multiple=FALSE)
 #===========================================================
@@ -338,6 +291,7 @@ mask2input <- function(mask, timeseries, multiple=FALSE)
     
     return(data.frame(io))
 }
+
 #===========================================================
 dvec <- function(time.series, lag)
 #===========================================================
@@ -387,6 +341,7 @@ dvec <- function(time.series, lag)
 	    
     return(data.frame(io))
 }
+
 #===========================================================
 iesearch <- function(data, ...)
 #===========================================================
@@ -407,67 +362,3 @@ iesearch <- function(data, ...)
     
     return(data.frame(Gammas=gtarray))
 }
-#===========================================================
-mtest <- function(data, start=20, mask=seq(from=1, to=1, length=(length(data[1,])-1)),
-                  step=1, p=10, eps=0.00, ...)
-#===========================================================
-{
-	data <- data.frame(data)
-	M <- length(data[,1])
-	d <- length(data[1,])
-	results <- NULL
-	vratios <- NULL
-	
-	jjs <- NULL
-	for(i in 1: as.integer((M - start)/step))
-	{
-		to <- (i * step) + start
-		jjs[i] <- to
-		
-		temp <- gammatest(data[1:to,], p=p, eps=eps, mask=mask,
-									   plot=FALSE, summary=FALSE)
-		results[i] <- temp$Gamma
-		vratios[i] <- temp$Vratio
-	}
-	
-	par(mfcol=c(2,1))
-	plot(jjs,results, type="l", cex.axis=1.15, cex.lab=1.25, lwd=2,xlim=c(start, M), xlab="M", ylab=expression(Gamma), 
-	main="M-test: Gamma Statistics", col="darkred", font.lab=3, ...)
-	plot(jjs, vratios, type="l", cex.axis=1.15, cex.lab=1.25, lwd=2,xlim=c(start, M), xlab="M", ylab=expression(V[ratio]), 
-	main="M-test: V ratios", col="navy", font.lab=3, ...)
-	
-	############# Print a summary of results ########################
-	
-	cat("\n")
-	cat("==========================================\n")
-	cat("        M-Test: Summary of Results\n")
-	cat("==========================================\n")
-	cat("\n")
-	cat("Mask:             ", mask, "\n")
-	cat("Starting point :  ", start, "\n")
-	cat("Step:             ", step, "\n")
-	cat("Sample of NN:	  ", p, "\n")
-	cat("\n")
-	
-	return(data.frame(index=jjs, Gammas=results, Vratios=vratios))
-}
-#===========================================================
-mtest.plot <- function(mt.results, stat="Gamma", ...)
-#===========================================================
-{
-	start <- mt.results$index[1]
-	M	  <- mt.results$index[length(mt.results[,1])]
-	if(stat == "Gamma")
-	{
-		plot(mt.results$index,mt.results$Gammas, type="l", cex.axis=1.15, 
-		cex.lab=1.25, lwd=2,xlim=c(start, M), xlab="M", ylab=expression(Gamma), 
-		col="darkred", font.lab=3, ...)
-	}
-	if(stat == "Vratio")
-	{
-		plot(mt.results$index, mt.results$Vratios, type="l", cex.axis=1.15, 
-		cex.lab=1.25, lwd=2,xlim=c(start, M), xlab="M", ylab=expression(V[ratio]), 
-		col="navy", font.lab=3, ...)
-	}
-}
-

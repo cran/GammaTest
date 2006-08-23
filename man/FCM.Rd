@@ -1,37 +1,28 @@
-\name{gteam}
-\alias{gteam}
+\name{FCM}
+\alias{FCM}
 
-\title{GTEAM: Gamma Test Embedding Analysis Method}
+\title{FCM: Frequency Combination Method}
 
 \description{
-Identifies the relevent inputs to a smooth model based on the results of a full embedding search.
+Identifies the relevent inputs to a smooth model based on the results of an embedding search.
 }
 
 \usage{
-gteam(fe.results, percentage=12.5, cl="p", alpha=1.96, multiple=FALSE, ...)
+FCM(mask.array, percentage=12.5)
 }
 
 \arguments{
-  \item{fe.results}{The returned results from a full embedding search.}
+  \item{mask.array}{The returned masks from an embedding search.}
   \item{percentage}{The proportion of masks from the high and low Gamma regions required to conduct
   a frequency analysis on the input inclusion/exclusion. The default is 12.5 percent.}
-  \item{cl}{Whether to use non-parametric or parametric confidence limits. The default is parametric.To change to parametric use "p".}
-  \item{alpha}{Confidence limit.}
-  \item{multiple}{logical indicating whether there are multiple time series inputs.} 
-  \item{...}{If dealing with multiple time series then one can send the names, so that a bar plot
-  produces the correct time series names for each lag.}
 }
 \details{
-In the case of time series model identification, GTEAM (at present) can only be applied to de-trended and de-seasonalised data.
-
- 	GTEAM is a simple function which takes the mask array from the full embedding and given the proportion
+	FCM is a simple function which takes the mask array from the full embedding and given the proportion
  	of low and high Gammas counts the number of times each input was included in the proportion of low
  	Gammas AND the number of times each input was excluded in the proportion of high Gammas. The frequency 
  	of each input is normalised, so that it lies in the range [0,1].
  	
- 	This function also plots the normalised frequencies and provides parametric confidence limits.  Non-parametric box-plot confidence limits can also be applied, thus the light blue dashed line represents the inner-fence (mild outliers) and the
- 	navy dashed line represents the outer-fence (extreme outliers). In the context of model identification the general rule of thumb is: an input should be included if it is greater than the outer fence and an input may be
- 	included if it lies between the inner and outer fences.
+ 	Non-parametric box-plot confidence limits are also pplied, thus the light blue dashed line represents the inner-fence (mild outliers). In the context of model identification the general rule of thumb is: an input should be included if it is greater than the inner fence.
  }
 
 \value{
@@ -63,7 +54,7 @@ For papers, theses and other Gamma test related material please visit
 ts.sim 	<- arima.sim(500, model=list(ar=0.9), sd=sqrt(1))
 gfts.sim <- dvec(ts.sim, 8)
 my.fe	<- fesearch(gfts.sim)
-gteam(my.fe)	
+FCM(my.fe$mask.array)	
 }
 \keyword{ts}
 

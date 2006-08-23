@@ -8,11 +8,11 @@ Durrant's Gamma test based feature selection method can be used to identify the 
 }
 
 \usage{
-durrantsmethod(fe.results, percentage=10)
+durrantsmethod(mask.array, percentage=10)
 }
 
 \arguments{
-  \item{fe.results}{The returned results from a full embedding search.}
+  \item{mask.array}{The returned mask array from an embedding search.}
   \item{percentage}{The proportion of masks from the high and low Gamma regions required to conduct
   a frequency analysis on the input inclusion/exclusion. The default is 12.5 percent.}
   }
@@ -42,7 +42,7 @@ For papers, theses and other Gamma test related material please visit
 ts.sim 	<- arima.sim(500, model=list(ar=0.9), sd=sqrt(1))
 gfts.sim <- dvec(ts.sim, 8)
 my.fe	<- fesearch(gfts.sim)
-durrantsmethod(my.fe)	
+durrantsmethod(my.fe$mask.array)	
 }
 \keyword{ts}
 
